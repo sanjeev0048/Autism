@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-accent: #00f0ff;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}

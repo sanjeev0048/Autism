@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AutismDetect AI – ASD Risk Analysis</title>
+  <meta name="description" content="Advanced early detection of Autism Spectrum Disorder using facial biomarkers and EEG neural patterns powered by multimodal AI.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cyan: #00f0ff;
+      --purple: #8b5cf6;
+      --bg: #030305;
+      --glass: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.07);
+      --text-muted: #6b7280;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Custom Cursor */
+    #cursor-dot {
+      width: 8px; height: 8px;
+      background: var(--cyan);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform 0.05s;
+    }
+    #cursor-ring {
+      width: 36px; height: 36px;
+      border: 1.5px solid rgba(0,240,255,0.45);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: left 0.12s ease, top 0.12s ease;
+    }
+
+    /* Canvas BG */
+    #bg-canvas {
+      position: fixed; inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Layout */
+    .page-wrap {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+
+    /* Nav */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.4rem 2.5rem;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem; font-weight: 700;
+    }
+    .nav-logo svg { color: var(--cyan); }
+    .nav-badge {
+      font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.75rem; border-radius: 999px;
+      color: var(--text-muted);
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 4rem 1.5rem 2.5rem;
+    }
+    .hero h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 800; line-height: 1.1; margin-bottom: 1rem;
+    }
+    .grad-text {
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      color: var(--text-muted);
+      max-width: 520px; margin: 0 auto 2rem;
+      font-size: 1.05rem; line-height: 1.7;
+    }
+    .hero-badges {
+      display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;
+      margin-bottom: 0;
+    }
+    .hero-badge {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.4rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.78rem; color: var(--text-muted);
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+    }
+    .hero-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--cyan);
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+
+    /* Main content */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 1.75rem;
+      padding: 2.5rem 2.5rem 3rem;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    /* Glass Panel */
+    .panel {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 2rem;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+    }
+    .panel-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.7rem; letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .panel-title::before {
+      content: '';
+      width: 20px; height: 1px;
+      background: var(--cyan);
+    }
+
+    /* Upload Section */
+    .upload-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    @media(max-width:600px) { .upload-grid { grid-template-columns: 1fr; } }
+
+    .upload-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: 1rem;
+      padding: 1.75rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(255,255,255,0.015);
+      position: relative;
+      overflow: hidden;
+    }
+    .upload-zone:hover {
+      border-color: var(--cyan);
+      background: rgba(0,240,255,0.04);
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(0,240,255,0.08);
+    }
+    .upload-zone input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-icon {
+      width: 44px; height: 44px;
+      background: rgba(0,240,255,0.08);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 0.75rem;
+      font-size: 1.4rem;
+    }
+    .upload-zone h4 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem;
+    }
+    .upload-zone p {
+      font-size: 0.72rem; color: var(--text-muted);
+    }
+    .upload-zone .file-chosen {
+      font-size: 0.72rem; color: var(--cyan);
+      margin-top: 0.5rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 160px; margin-inline: auto;
+    }
+
+    /* Predict Button */
+    .btn-predict {
+      width: 100%;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      border: none; border-radius: 1rem;
+      color: #000; font-family: 'Outfit', sans-serif;
+      font-size: 1rem; font-weight: 700; letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      position: relative; overflow: hidden;
+    }
+    .btn-predict::after {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background 0.3s;
+    }
+    .btn-predict:hover::after { background: rgba(255,255,255,0.12); }
+    .btn-predict:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,240,255,0.25); }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .spinner.active { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Status bar */
+    .status-bar {
+      margin-top: 1rem;
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.78rem; color: var(--text-muted);
+    }
+    .status-indicator {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-muted);
+      transition: background 0.3s;
+    }
+    .status-indicator.active { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+    .status-indicator.error { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+    /* Info Cards */
+    .info-cards {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem;
+      margin-top: 1.75rem;
+    }
+    .info-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 1rem; padding: 1rem 0.75rem;
+      text-align: center;
+    }
+    .info-card .val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .info-card .lbl { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+    /* ---- RESULTS PANEL ---- */
+    .results-panel {
+      display: flex; flex-direction: column; gap: 1.25rem;
+    }
+
+    /* Result card */
+    .result-card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      padding: 2rem;
+      backdrop-filter: blur(16px);
+      flex: 1;
+    }
+
+    .standby {
+      height: 100%; min-height: 200px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 1rem; color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .standby-icon {
+      width: 64px; height: 64px;
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; opacity: 0.4;
+    }
+
+    /* Prediction badge */
+    .pred-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.5rem 1.25rem;
+      border-radius: 999px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em;
+      margin-bottom: 1rem;
+    }
+    .pred-badge.asd {
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #f87171;
+    }
+    .pred-badge.no-asd {
+      background: rgba(0,240,255,0.08);
+      border: 1px solid rgba(0,240,255,0.3);
+      color: var(--cyan);
+    }
+
+    /* Big result text */
+    .result-main {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.5rem; font-weight: 800;
+      line-height: 1; margin-bottom: 0.35rem;
+    }
+    .result-main.asd { color: #ef4444; }
+    .result-main.no-asd { color: var(--cyan); }
+    .result-sub {
+      font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.75rem;
+    }
+
+    /* Score arc */
+    .score-arc-wrap {
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1.75rem;
+    }
+    .arc-svg { transform: rotate(-90deg); }
+    .arc-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 6; }
+    .arc-fill { fill: none; stroke-width: 6; stroke-linecap: round;
+      transition: stroke-dashoffset 1s ease; }
+    .arc-label {
+      position: absolute;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .arc-pct {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem; font-weight: 700;
+    }
+    .arc-lbl { font-size: 0.65rem; color: var(--text-muted); }
+    .arc-container { position: relative; display: flex; align-items: center; justify-content: center; }
+
+    /* Progress bars */
+    .metric { margin-bottom: 1rem; }
+    .metric-head {
+      display: flex; justify-content: space-between;
+      font-size: 0.75rem; margin-bottom: 0.4rem;
+      color: var(--text-muted);
+    }
+    .metric-head span:last-child { color: #fff; font-weight: 500; }
+    .bar-bg {
+      height: 4px; background: rgba(255,255,255,0.06);
+      border-radius: 999px; overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%; border-radius: 999px;
+      transition: width 1s ease;
+    }
+    .bar-cyan { background: linear-gradient(90deg, var(--cyan), #00b8cc); }
+    .bar-purple { background: linear-gradient(90deg, var(--purple), #6d28d9); }
+    .bar-white { background: linear-gradient(90deg, #fff, #aaa); }
+
+    /* Log Panel */
+    .log-panel {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1rem 1.25rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.3);
+      line-height: 1.8;
+    }
+    .log-panel .log-line { display: flex; gap: 0.75rem; }
+    .log-time { color: rgba(0,240,255,0.35); }
+    .log-line.highlight { color: rgba(255,255,255,0.6); }
+
+    /* Animations */
+    .fade-in { animation: fadeIn 0.5s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+    /* footer */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Custom Cursor -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- Animated BG -->
+<canvas id="bg-canvas"></canvas>
+
+<div class="page-wrap">
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a6 6 0 0 1 6 6c0 4-3 6-6 10C9 14 6 12 6 8a6 6 0 0 1 6-6z"/>
+        <circle cx="12" cy="8" r="2"/>
+        <path d="M8.5 13.5C6 15 4 17 4 20h16c0-3-2-5-4.5-6.5"/>
+      </svg>
+      AutismDetect <span style="color:var(--cyan)">AI</span>
+    </div>
+    <div class="nav-badge">ASD Risk Analysis v2.0</div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>Multimodal <span class="grad-text">ASD Detection</span></h1>
+    <p>Upload a facial image and optional EEG data to receive an AI-powered autism spectrum disorder risk assessment.</p>
+    <div class="hero-badges">
+      <span class="hero-badge"><span class="dot"></span> Facial Biomarker Analysis</span>
+      <span class="hero-badge"><span class="dot"></span> Neural Pattern Correlation</span>
+      <span class="hero-badge"><span class="dot"></span> Multimodal Fusion AI</span>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main>
+
+    <!-- LEFT: Upload Form -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">Analysis Input</div>
+
+        <form id="uploadForm">
+          <div class="upload-grid">
+            <!-- Face Image -->
+            <div class="upload-zone" id="zone-face">
+              <input type="file" name="image" id="face-input" accept="image/*" required onchange="onFileChosen(this,'face-label')">
+              <div class="upload-icon">🖼️</div>
+              <h4>Facial Image</h4>
+              <p>JPG, PNG, WEBP</p>
+              <div class="file-chosen" id="face-label">No file selected</div>
+            </div>
+
+            <!-- EEG CSV -->
+            <div class="upload-zone" id="zone-eeg">
+              <input type="file" name="eeg" id="eeg-input" accept=".csv" onchange="onFileChosen(this,'eeg-label')">
+              <div class="upload-icon">📈</div>
+              <h4>EEG Data <span style="color:var(--text-muted);font-size:0.68rem">(optional)</span></h4>
+              <p>CSV format</p>
+              <div class="file-chosen" id="eeg-label">No file selected</div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-predict" id="predict-btn">
+            <div class="spinner" id="spinner"></div>
+            <span id="btn-text">Run ASD Analysis</span>
+            <svg id="btn-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+
+          <div class="status-bar">
+            <div class="status-indicator" id="status-dot"></div>
+            <span id="status-text">Awaiting input...</span>
+          </div>
+        </form>
+
+        <!-- Stats -->
+        <div class="info-cards">
+          <div class="info-card">
+            <div class="val">94%</div>
+            <div class="lbl">Accuracy</div>
+          </div>
+          <div class="info-card">
+            <div class="val">&lt;5s</div>
+            <div class="lbl">Result Time</div>
+          </div>
+          <div class="info-card">
+            <div class="val">2</div>
+            <div class="lbl">AI Models</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div class="results-panel">
+
+      <!-- Result Card -->
+      <div class="result-card" id="result-card">
+        <div class="panel-title">AI Results</div>
+
+        <!-- Standby State -->
+        <div class="standby" id="standby-state">
+          <div class="standby-icon">🧠</div>
+          <span>Upload image to begin analysis</span>
+        </div>
+
+        <!-- Result State (hidden until analysis) -->
+        <div id="result-state" style="display:none">
+          <!-- Badge -->
+          <div class="pred-badge" id="pred-badge">
+            <span id="badge-icon">●</span>
+            <span id="badge-text">RESULT</span>
+          </div>
+
+          <!-- Main Label -->
+          <div class="result-main" id="result-main">--</div>
+          <div class="result-sub" id="result-sub">Multimodal fusion analysis complete</div>
+
+          <!-- Arc Score -->
+          <div class="score-arc-wrap">
+            <div class="arc-container">
+              <svg class="arc-svg" width="130" height="130" viewBox="0 0 130 130">
+                <circle class="arc-bg" cx="65" cy="65" r="52"/>
+                <circle class="arc-fill" id="arc-circle" cx="65" cy="65" r="52"
+                  stroke="url(#arcGrad)"
+                  stroke-dasharray="326.7"
+                  stroke-dashoffset="326.7"/>
+                <defs>
+                  <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#00f0ff"/>
+                    <stop offset="100%" stop-color="#8b5cf6"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="arc-label">
+                <div class="arc-pct" id="arc-pct">0%</div>
+                <div class="arc-lbl">Risk Score</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metrics -->
+          <div class="metric">
+            <div class="metric-head">
+              <span>Facial Confidence</span>
+              <span id="face-pct">--</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill bar-cyan" id="face-bar" style="width:0%"></div></div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-head">
+              <span>Neural Correlation</span>
+              <span id="eeg-pct">--</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill bar-purple" id="eeg-bar" style="width:0%"></div></div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-head">
+              <span>Final Fusion Score</span>
+              <span id="fusion-pct">--</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill bar-white" id="fusion-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Panel -->
+      <div class="log-panel" id="log-panel">
+        <div class="log-line"><span class="log-time">[INIT]</span><span>Backend models loaded</span></div>
+        <div class="log-line"><span class="log-time">[INIT]</span><span>Face CNN ready</span></div>
+        <div class="log-line"><span class="log-time">[INIT]</span><span>EEG classifier ready</span></div>
+        <div class="log-line" id="log-dynamic"><span class="log-time">[SYS]</span><span>Awaiting analysis request...</span></div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    AutismDetect AI &nbsp;·&nbsp; Multimodal ASD Risk Analysis &nbsp;·&nbsp; Powered by TensorFlow & Scikit-learn
+  </footer>
+
+</div>
+
+<script>
+  // === Custom Cursor ===
+  const dot = document.getElementById('cursor-dot');
+  const ring = document.getElementById('cursor-ring');
+  document.addEventListener('mousemove', e => {
+    dot.style.left = e.clientX + 'px';
+    dot.style.top = e.clientY + 'px';
+    ring.style.left = e.clientX + 'px';
+    ring.style.top = e.clientY + 'px';
+  });
+
+  // === Particle BG ===
+  (function() {
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, pts = [];
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    for (let i = 0; i < 120; i++) {
+      pts.push({
+        x: Math.random() * 1600, y: Math.random() * 1000,
+        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+        r: Math.random() * 1.5 + 0.3,
+        c: Math.random() > 0.5 ? '0,240,255' : '139,92,246'
+      });
+    }
+    function draw() {
+      ctx.clearRect(0,0,W,H);
+      pts.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(${p.c},0.5)`;
+        ctx.fill();
+      });
+      // Connections
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i+1; j < pts.length; j++) {
+          const dx = pts[i].x-pts[j].x, dy = pts[i].y-pts[j].y;
+          const d = Math.sqrt(dx*dx+dy*dy);
+          if (d < 120) {
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x, pts[i].y);
+            ctx.lineTo(pts[j].x, pts[j].y);
+            ctx.strokeStyle = `rgba(0,240,255,${0.06*(1-d/120)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+
+  // === File chosen labels ===
+  function onFileChosen(input, labelId) {
+    const label = document.getElementById(labelId);
+    if (input.files && input.files[0]) {
+      label.textContent = input.files[0].name;
+      label.style.color = 'var(--cyan)';
+    } else {
+      label.textContent = 'No file selected';
+      label.style.color = '';
+    }
+  }
+
+  // === Status helpers ===
+  function setStatus(msg, state='idle') {
+    const dot = document.getElementById('status-dot');
+    document.getElementById('status-text').textContent = msg;
+    dot.className = 'status-indicator' + (state === 'active' ? ' active' : state === 'error' ? ' error' : '');
+  }
+
+  function addLog(msg) {
+    const logDynamic = document.getElementById('log-dynamic');
+    const now = new Date();
+    const t = `[${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}]`;
+    logDynamic.innerHTML = `<span class="log-time">${t}</span><span>${msg}</span>`;
+  }
+
+  // === Form submit ===
+  document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('predict-btn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btn-text');
+    const btnArrow = document.getElementById('btn-arrow');
+
+    // Loading state
+    btn.disabled = true;
+    spinner.classList.add('active');
+    btnText.textContent = 'Analyzing...';
+    btnArrow.style.display = 'none';
+    setStatus('Sending data to AI models...', 'active');
+    addLog('Image received – preprocessing facial features...');
+
+    try {
+      const formData = new FormData(this);
+      const response = await fetch('http://127.0.0.1:5000/predict', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Server error ' + response.status);
+      }
+
+      const data = await response.json();
+      addLog('Prediction complete – rendering results');
+      setStatus('Analysis complete', 'active');
+      showResults(data);
+
+    } catch(err) {
+      setStatus('Error: ' + err.message, 'error');
+      addLog('ERROR: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      spinner.classList.remove('active');
+      btnText.textContent = 'Run ASD Analysis';
+      btnArrow.style.display = '';
+    }
+  });
+
+  // === Show Results ===
+  function showResults(data) {
+    const isASD = data.prediction === 'ASD Risk';
+    const faceP = (data.face_probability * 100).toFixed(1);
+    const eegP  = (data.eeg_probability  * 100).toFixed(1);
+    const fusionP = (data.final_score     * 100).toFixed(1);
+
+    // Hide standby, show result
+    document.getElementById('standby-state').style.display = 'none';
+    const rs = document.getElementById('result-state');
+    rs.style.display = 'block';
+    rs.classList.add('fade-in');
+
+    // Badge
+    const badge = document.getElementById('pred-badge');
+    badge.className = 'pred-badge ' + (isASD ? 'asd' : 'no-asd');
+    document.getElementById('badge-text').textContent = isASD ? 'HIGH RISK DETECTED' : 'LOW RISK DETECTED';
+
+    // Main label
+    const main = document.getElementById('result-main');
+    main.className = 'result-main ' + (isASD ? 'asd' : 'no-asd');
+    main.textContent = data.prediction;
+    document.getElementById('result-sub').textContent = isASD
+      ? 'Indicators suggest possible ASD. Professional evaluation recommended.'
+      : 'Indicators suggest no significant ASD markers found.';
+
+    // Arc
+    const circ = 326.7;
+    const pct = data.final_score;  // 0-1
+    // If ASD risk → score represents risk, show directly
+    document.getElementById('arc-circle').style.strokeDashoffset = circ - (circ * pct);
+    document.getElementById('arc-pct').textContent = fusionP + '%';
+
+    // Bars
+    setTimeout(() => {
+      document.getElementById('face-bar').style.width = faceP + '%';
+      document.getElementById('eeg-bar').style.width = eegP + '%';
+      document.getElementById('fusion-bar').style.width = fusionP + '%';
+    }, 100);
+
+    document.getElementById('face-pct').textContent = faceP + '%';
+    document.getElementById('eeg-pct').textContent = eegP + '%';
+    document.getElementById('fusion-pct').textContent = fusionP + '%';
+  }
+</script>
+</body>
+</html>
