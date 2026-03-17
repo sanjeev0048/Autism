@@ -5,3 +5,6 @@ dist/
 .DS_Store
 .vscode/
 build/
+backend-20260312T053924Z-3-001/backend/uploads/
+backend-20260312T053924Z-3-001/backend/models/
+backend-20260312T053924Z-3-001/backend/__pycache__/

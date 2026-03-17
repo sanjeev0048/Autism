@@ -20,13 +20,29 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 FACE_MODEL_PATH = os.path.join(BASE_DIR, "models", "face_model.h5")
 EEG_MODEL_PATH = os.path.join(BASE_DIR, "models", "eeg_model.pkl")
 
-print(f"Loading models from: {FACE_MODEL_PATH}, {EEG_MODEL_PATH}")
+print(f"Checking for model files...")
+print(f"Face Model Path: {FACE_MODEL_PATH} -> Exists: {os.path.exists(FACE_MODEL_PATH)}")
+print(f"EEG Model Path: {EEG_MODEL_PATH} -> Exists: {os.path.exists(EEG_MODEL_PATH)}")
 
-face_model = tf.keras.models.load_model(FACE_MODEL_PATH)
+if not os.path.exists(FACE_MODEL_PATH):
+    print(f"ERROR: Face model not found! Please ensure 'face_model.h5' is in: {os.path.join(BASE_DIR, 'models')}")
+    # You might want to exit here or handle it
+    # exit(1) 
+
 try:
-    eeg_model = joblib.load(EEG_MODEL_PATH)
+    print("Loading Face Model...")
+    face_model = tf.keras.models.load_model(FACE_MODEL_PATH)
+    print("Face Model loaded successfully.")
 except Exception as e:
-    print(f"Warning: Could not load EEG model from {EEG_MODEL_PATH}: {e}")
+    print(f"Error loading Face Model: {e}")
+    face_model = None
+
+try:
+    print("Loading EEG Model...")
+    eeg_model = joblib.load(EEG_MODEL_PATH)
+    print("EEG Model loaded successfully.")
+except Exception as e:
+    print(f"Warning: Could not load EEG model: {e}")
     eeg_model = None
 
 
@@ -51,6 +67,9 @@ def predict():
             return jsonify({"error": "No face detected in the image"}), 400
 
         # Predict face probability
+        if face_model is None:
+            return jsonify({"error": "Face analysis model not loaded. Please check server logs."}), 500
+            
         face_prob = face_model.predict(face_input)[0][0]
 
         # Handle EEG - optional or simulated if not provided
