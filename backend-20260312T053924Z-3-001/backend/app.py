@@ -23,7 +23,11 @@ EEG_MODEL_PATH = os.path.join(BASE_DIR, "models", "eeg_model.pkl")
 print(f"Loading models from: {FACE_MODEL_PATH}, {EEG_MODEL_PATH}")
 
 face_model = tf.keras.models.load_model(FACE_MODEL_PATH)
-eeg_model = joblib.load(EEG_MODEL_PATH)
+try:
+    eeg_model = joblib.load(EEG_MODEL_PATH)
+except Exception as e:
+    print(f"Warning: Could not load EEG model from {EEG_MODEL_PATH}: {e}")
+    eeg_model = None
 
 
 @app.route("/")
@@ -50,7 +54,7 @@ def predict():
         face_prob = face_model.predict(face_input)[0][0]
 
         # Handle EEG - optional or simulated if not provided
-        if "eeg" in request.files:
+        if "eeg" in request.files and eeg_model is not None:
             eeg = request.files["eeg"]
             eeg_path = os.path.join(UPLOAD_FOLDER, eeg.filename)
             eeg.save(eeg_path)
