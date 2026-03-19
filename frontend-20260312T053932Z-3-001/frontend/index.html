@@ -478,9 +478,9 @@
 
             <!-- EEG CSV -->
             <div class="upload-zone" id="zone-eeg">
-              <input type="file" name="eeg" id="eeg-input" accept=".csv" onchange="onFileChosen(this,'eeg-label')">
+              <input type="file" name="eeg" id="eeg-input" accept=".csv" required onchange="onFileChosen(this,'eeg-label')">
               <div class="upload-icon">📈</div>
-              <h4>EEG Data <span style="color:var(--text-muted);font-size:0.68rem">(optional)</span></h4>
+              <h4>EEG Data</h4>
               <p>CSV format</p>
               <div class="file-chosen" id="eeg-label">No file selected</div>
             </div>

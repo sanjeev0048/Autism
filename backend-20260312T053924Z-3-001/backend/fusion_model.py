@@ -2,8 +2,8 @@ import numpy as np
 
 def fuse_predictions(face_prob, eeg_prob):
 
-    # Weighted fusion
-    final_score = (0.6 * face_prob) + (0.4 * eeg_prob)
+    # Weighted fusion (Equal weights)
+    final_score = (0.5 * face_prob) + (0.5 * eeg_prob)
 
     # Risk classification
     if final_score < 0.40:

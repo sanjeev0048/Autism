@@ -72,25 +72,24 @@ def predict():
             
         face_prob = face_model.predict(face_input)[0][0]
 
-        # Handle EEG - optional or simulated if not provided
-        if "eeg" in request.files and eeg_model is not None:
-            eeg = request.files["eeg"]
-            eeg_path = os.path.join(UPLOAD_FOLDER, eeg.filename)
-            eeg.save(eeg_path)
+        # Handle EEG - mandatory
+        if "eeg" not in request.files:
+            return jsonify({"error": "No EEG data provided"}), 400
+
+        eeg = request.files["eeg"]
+        eeg_path = os.path.join(UPLOAD_FOLDER, eeg.filename)
+        eeg.save(eeg_path)
+        
+        # Load EEG model features and prediction
+        if eeg_model is not None:
             eeg_features = extract_features(eeg_path)
             eeg_prob = eeg_model.predict_proba(eeg_features)[0][1]
         else:
-            # Simulated EEG probability if no file provided
-            # We'll base it slightly on the face_prob to maintain some consistency for demo purposes
-            eeg_prob = float(np.random.uniform(0.3, 0.7))
-            if face_prob > 0.7:
-                eeg_prob = float(np.random.uniform(0.6, 0.9))
-            elif face_prob < 0.3:
-                eeg_prob = float(np.random.uniform(0.1, 0.4))
+            return jsonify({"error": "EEG analysis model not loaded. Please check server logs."}), 500
 
-        # Multimodal Fusion
+        # Multimodal Fusion - Equal weights
         # Threshold: Assuming ASD=0, NON-ASD=1 Based on alphabetical folder names
-        final_score = (0.6 * face_prob) + (0.4 * eeg_prob)
+        final_score = (0.5 * face_prob) + (0.5 * eeg_prob)
 
         if final_score < 0.5:
             result = "ASD Risk"

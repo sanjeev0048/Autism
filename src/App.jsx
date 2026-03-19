@@ -404,7 +404,7 @@ const Dashboard = () => {
 
   const onSubmit = async e => {
     e.preventDefault();
-    if (!hasImage) { setError('Please provide a face image.'); return; }
+    if (!hasImage || !eegFile) { setError('Please provide both a face image and EEG data.'); return; }
     setLoading(true); setError(null); setResult(null);
     setStatus('Analyzing facial biomarkers...');
     try {
@@ -460,7 +460,7 @@ const Dashboard = () => {
       <div style={{textAlign:'center',marginBottom:'3rem'}}>
         <span className="section-chip">AI Dashboard</span>
         <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:800}}>ASD Risk Analysis</h2>
-        <p style={{color:'#6b7280',marginTop:'0.6rem',fontSize:'0.9rem'}}>Capture or upload a facial image — optional EEG data for enhanced accuracy</p>
+        <p style={{color:'#6b7280',marginTop:'0.6rem',fontSize:'0.9rem'}}>Capture or upload a facial image and provide EEG data for multimodal fusion analysis</p>
       </div>
 
       {/* ── ROW 1: Input Stream | Score Panel ── */}
@@ -577,8 +577,8 @@ const Dashboard = () => {
               whileTap={{scale:0.95}}
               style={{padding:'0.65rem 0.9rem',border:`1px dashed ${eegFile?'var(--purple)':'rgba(255,255,255,0.1)'}`,
                 borderRadius:10,cursor:'none',transition:'all 0.2s',textAlign:'center',
-                color:eegFile?'var(--purple)':'#6b7280',fontSize:'0.72rem',whiteSpace:'nowrap'}}
-              title="Upload EEG CSV (optional)"
+                color:eegFile?'var(--purple)':'#facc15',fontSize:'0.72rem',whiteSpace:'nowrap'}}
+              title="Upload EEG CSV (Required)"
               onMouseEnter={e=>e.currentTarget.style.borderColor='var(--purple)'}
               onMouseLeave={e=>e.currentTarget.style.borderColor=eegFile?'var(--purple)':'rgba(255,255,255,0.1)'}>
               <input ref={eegRef} type="file" accept=".csv" style={{display:'none'}}
@@ -661,13 +661,13 @@ const Dashboard = () => {
           <div style={{marginTop:'1.5rem',display:'flex',gap:'0.6rem'}}>
             <motion.button 
               onClick={onSubmit} 
-              disabled={loading||!hasImage}
-              whileHover={hasImage ? {scale:1.02, boxShadow:'0 0 25px rgba(0,229,255,0.4)'} : {}}
-              whileTap={hasImage ? {scale:0.98} : {}}
+              disabled={loading||!hasImage||!eegFile}
+              whileHover={(hasImage&&eegFile) ? {scale:1.02, boxShadow:'0 0 25px rgba(0,229,255,0.4)'} : {}}
+              whileTap={(hasImage&&eegFile) ? {scale:0.98} : {}}
               style={{flex:1,padding:'0.8rem',border:'none',borderRadius:10,
-                background:hasImage?'linear-gradient(135deg,var(--cyan),var(--purple))':'rgba(255,255,255,0.05)',
-                color:hasImage?'#000':'#4b5563',fontFamily:'Outfit',fontWeight:700,fontSize:'0.88rem',
-                cursor:hasImage?'none':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',gap:'0.4rem',
+                background:(hasImage&&eegFile)?'linear-gradient(135deg,var(--cyan),var(--purple))':'rgba(255,255,255,0.05)',
+                color:(hasImage&&eegFile)?'#000':'#4b5563',fontFamily:'Outfit',fontWeight:700,fontSize:'0.88rem',
+                cursor:(hasImage&&eegFile)?'none':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',gap:'0.4rem',
                 transition:'all 0.3s'}}>
               {loading?<><RefreshCw size={15} style={{animation:'spin 0.7s linear infinite'}}/> Analyzing...</>:'Analyze â†’'}
             </motion.button>
